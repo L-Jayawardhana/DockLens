@@ -112,6 +112,34 @@ func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	return m, nil
 }
 
+// --- View ---
+func (m model) View() string {
+	if m.err != nil {
+		return fmt.Sprintf("Error connecting to Docker: %v\n\nPress 'q' to quit.", m.err)
+	}
+
+	s := titleStyle.Render("🐳 Running Docker Containers") + "\n"
+
+	if len(m.containers) == 0 {
+		s += "No running containers found.\n"
+	} else {
+		for i, c := range m.containers {
+			name := strings.TrimPrefix(c.Names[0], "/")
+			// Show ID, Status, Image, and Name
+			row := fmt.Sprintf("%s | %-12s | %-20s | %s", c.ID[:12], c.Status, c.Image, name)
+
+			if m.cursor == i {
+				s += selectedItemStyle.Render("❯ "+row) + "\n"
+			} else {
+				s += unselectedItemStyle.Render("  "+row) + "\n"
+			}
+		}
+	}
+
+	s += "\nPress j/k or up/down to move • Press q to quit\n"
+	return s
+}
+
 func main() {
 	// Connect to Docker
 	cli, err := client.NewClientWithOpts(client.FromEnv, client.WithAPIVersionNegotiation())
