@@ -52,7 +52,16 @@ func doTick() tea.Cmd {
 	})
 }
 
-
+// fetchContainers reaches out to Docker and returns a containersMsg
+func fetchContainers(cli *client.Client) tea.Cmd {
+	return func() tea.Msg {
+		containers, err := cli.ContainerList(context.Background(), container.ListOptions{})
+		if err != nil {
+			return errMsg{err}
+		}
+		return containersMsg(containers)
+	}
+}
 
 // --- Init ---
 func (m model) Init() tea.Cmd {
