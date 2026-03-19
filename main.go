@@ -2,23 +2,21 @@ package main
 
 import (
 	"fmt"
+	"os"
 
-	"github.com/charmbracelet/lipgloss"
+	tea "github.com/charmbracelet/bubbletea"
 )
 
-const logo = `
-██████╗  ██████╗  ██████╗██╗  ██╗██╗     ███████╗███╗   ██╗███████╗
-██╔══██╗██╔═══██╗██╔════╝██║ ██╔╝██║     ██╔════╝████╗  ██║██╔════╝
-██║  ██║██║   ██║██║     █████╔╝ ██║     █████╗  ██╔██╗ ██║███████╗
-██║  ██║██║   ██║██║     ██╔═██╗ ██║     ██╔══╝  ██║╚██╗██║╚════██║
-██████╔╝╚██████╔╝╚██████╗██║  ██╗███████╗███████╗██║ ╚████║███████║
-╚═════╝  ╚═════╝  ╚═════╝╚═╝  ╚═╝╚══════╝╚══════╝╚═╝  ╚═══╝╚══════╝
-`
-
 func main() {
-	logoStyle := lipgloss.NewStyle().
-		Foreground(lipgloss.Color("#00f0f9")).
-		Padding(1, 2)
+	p := tea.NewProgram(
+		NewModel(),
+		tea.WithAltScreen(),
+		tea.WithMouseCellMotion(),
+	)
 
-	fmt.Println(logoStyle.Render(logo))
+	if _, err := p.Run(); err != nil {
+		fmt.Fprintf(os.Stderr, "Error running program: %v\n", err)
+		os.Exit(1)
+	}
 }
+
