@@ -4,82 +4,93 @@
 ![Platform](https://img.shields.io/badge/Platform-Linux%20%7C%20macOS%20%7C%20Windows-lightgrey)
 ![License](https://img.shields.io/badge/License-MIT-blue.svg)
 
-**DockLens** is a blazing-fast, lightweight Terminal UI (TUI) for monitoring and managing Docker containers.
+**DockLens** is a blazing-fast, lightweight Terminal UI (TUI) for monitoring and managing Docker environments.
 
-Built entirely in Go, it interacts directly with the Docker daemon to provide real-time insights without the heavy resource footprint of traditional Electron-based desktop applications. It fits terminal-heavy workflows, tiling window managers, and remote cloud VMs.
+Built entirely in Go, it interacts directly with the Docker Engine SDK to provide real-time insights without the heavy resource footprint of traditional desktop applications. Designed for developers who live in the terminal.
 
 ---
 
 ## ✨ Features
 
-### Current
-* **Instant Visibility:** View all currently running containers at a glance.
-* **Vim-Style Navigation:** Use `j`/`k` or arrow keys to move.
-* **Zero Dependencies:** Single static binary once built.
-* **Beautiful UI:** Styled with Charmbracelet's Lip Gloss.
-
-### 🚀 Roadmap (Coming Soon)
-- [ ] View real-time container logs.
-- [ ] Start, stop, and restart containers from the UI.
-- [ ] View local Docker images and their sizes.
-- [ ] Monitor live container resource usage (CPU/Memory).
-- [ ] Exec into a running container (`/bin/sh` or `/bin/bash`).
+- **🚢 Container Management**: View all containers (running and stopped) with real-time status badges.
+- **📊 Live Resource Monitoring**: Dynamic CPU and Memory usage percentages with visual progress bars.
+- **📜 Integrated Logs**: Scroll through recent container logs directly within the TUI.
+- **🖼️ Image Explorer**: List local Docker images, tags, and sizes.
+- **� Volume & Network Insights**: Simple overview of your Docker storage and networking layers.
+- **⚡ Auto-Refresh**: 3-second live refresh cycle keeps your view perfectly synced with the Docker daemon.
+- **⌨️ Vim-Style Navigation**: Fluid navigation using `j`/`k` or arrow keys.
+- **🎨 Modern Aesthetics**: A premium "Command Center" interface powered by Lip Gloss.
 
 ---
 
 ## 🛠️ Tech Stack
-* **Language:** Go
-* **TUI Framework:** Bubble Tea
-* **Styling:** Lip Gloss
-* **Docker API:** Docker Engine SDK for Go
+
+* **Language:** Go 1.25+
+* **TUI Framework:** [Bubble Tea](https://github.com/charmbracelet/bubbletea)
+* **Styling:** [Lip Gloss](https://github.com/charmbracelet/lipgloss)
+* **Docker API:** [Docker Engine SDK for Go](https://github.com/moby/moby)
 
 ---
 
 ## 🚀 Getting Started
 
 ### Prerequisites
+
 * Go 1.25 or higher installed.
-* Docker daemon running and your user allowed to access it (usually via `/var/run/docker.sock`).
+* Docker daemon running.
+* Permissions to access `/var/run/docker.sock` (typically by being in the `docker` group).
 
 ### Installation
+
 1. Clone the repository:
    ```bash
    git clone https://github.com/lakdinu/DockLens.git
    cd DockLens
    ```
 
-2. Install Go (if needed):
-   * Arch Linux: `sudo pacman -S go`
-   * Debian/Ubuntu: `sudo apt-get install -y golang`
-   * macOS (Homebrew): `brew install go`
-
-3. Install dependencies:
+2. Sync dependencies:
    ```bash
    go mod tidy
    ```
 
-4. Run DockLens:
+3. Run DockLens:
    ```bash
-   go run main.go
+   go run .
    ```
 
-5. (Optional) Build a binary:
+4. Build a binary:
    ```bash
    go build -o docklens
    ./docklens
    ```
 
-### Usage
-- Navigate with `j`/`k` or arrow keys.
-- Quit with `q` or `Ctrl+C`.
+---
 
-### Troubleshooting
-- Ensure Docker is running and your user can access the Docker socket.
-- If module downloads fail (e.g., EOF), re-run `go mod tidy`; transient network issues are common.
-- If permissions are denied on the Docker socket, add your user to the `docker` group or run via `sudo` (as a last resort).
+## ⌨️ Controls
 
-### Contributing
-Issues and PRs are welcome. Please run `go fmt ./...` before opening a pull request.
+| Key | Action |
+|-----|--------|
+| `tab` | Switch between Tabs (Containers, Images, etc.) |
+| `j` / `k` | Navigate items in the left panel |
+| `J` / `K` | Scroll through logs in the detail panel |
+| `enter` | Open actions menu for selected item |
+| `?` | Toggle help overlay |
+| `q` | Quit DockLens |
 
-### License
-MIT
+---
+
+## 🤝 Contributing
+
+Contributions make the open-source community an amazing place to learn, inspire, and create. Any contributions you make are **greatly appreciated**.
+
+1. Fork the Project
+2. Create your Feature Branch (`git checkout -b feature/AmazingFeature`)
+3. Commit your Changes (`git commit -m 'Add some AmazingFeature'`)
+4. Push to the Branch (`git push origin feature/AmazingFeature`)
+5. Open a Pull Request
+
+---
+
+## 📄 License
+
+Distributed under the MIT License. See `LICENSE` for more information.
