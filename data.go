@@ -7,6 +7,7 @@ import (
 	"strings"
 	"time"
 
+	"github.com/docker/docker/api/types"
 	"github.com/docker/docker/api/types/container"
 	"github.com/docker/docker/api/types/image"
 	"github.com/docker/docker/api/types/network"
@@ -275,6 +276,58 @@ func getSystemInfo(cli *client.Client) (SystemInfo, error) {
 	}
 
 	version, _ := cli.ServerVersion(ctx)
+	diskUsage, _ := cli.DiskUsage(ctx, types.DiskUsageOptions{})
+
+	imagesSize := int64(0)
+	volumesSize := int64(0)
+	buildCacheSize := int64(0)
+	reclaimableSize := uint64(0)
+
+	for _, img := range diskUsage.Images {
+		if img == nil {
+			continue
+		}
+		imagesSize += img.Size
+		if img.Containers == 0 {
+			reclaimableSize += uint64(maxInt64(img.Size, 0))
+		}
+	}
+
+	for _, vol := range diskUsage.Volumes {
+		if vol == nil || vol.UsageData == nil {
+			continue
+		}
+		if vol.UsageData.Size > 0 {
+			volumesSize += vol.UsageData.Size
+		}
+		if vol.UsageData.RefCount == 0 && vol.UsageData.Size > 0 {
+			reclaimableSize += uint64(vol.UsageData.Size)
+		}
+	}
+
+	for _, cache := range diskUsage.BuildCache {
+		if cache == nil {
+			continue
+		}
+		if cache.Size > 0 {
+			buildCacheSize += cache.Size
+		}
+		if !cache.InUse && cache.Size > 0 {
+			reclaimableSize += uint64(cache.Size)
+		}
+	}
+
+	totalUsed := imagesSize + volumesSize + buildCacheSize
+	diskTotal := "N/A"
+	for _, kv := range info.DriverStatus {
+		if len(kv) != 2 {
+			continue
+		}
+		if kv[0] == "Data Space Total" || kv[0] == "Total Space" {
+			diskTotal = kv[1]
+			break
+		}
+	}
 
 	return SystemInfo{
 		DockerVersion: version.Version,
@@ -288,5 +341,28 @@ func getSystemInfo(cli *client.Client) (SystemInfo, error) {
 		ContainersUp:  info.ContainersRunning,
 		Images:        info.Images,
 		StorageDriver: info.Driver,
+		DiskTotal:     diskTotal,
+		DiskUsed:      formatBytes(totalUsed),
+		ImagesSize:    formatBytes(imagesSize),
+		VolumesSize:   formatBytes(volumesSize),
+		BuildCacheSize: func() string {
+			if buildCacheSize <= 0 {
+				return "0 B"
+			}
+			return formatBytes(buildCacheSize)
+		}(),
+		ReclaimableSize: func() string {
+			if reclaimableSize == 0 {
+				return "0 B"
+			}
+			return formatBytes(int64(reclaimableSize))
+		}(),
 	}, nil
+}
+
+func maxInt64(a, b int64) int64 {
+	if a > b {
+		return a
+	}
+	return b
 }

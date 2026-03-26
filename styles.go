@@ -4,7 +4,7 @@ import "github.com/charmbracelet/lipgloss"
 
 var (
 	// Color palette
-	colorCyan      = lipgloss.Color("#00f0f9")
+	colorCyan      = lipgloss.Color("#00f5f9ff")
 	colorDimCyan   = lipgloss.Color("#006e73")
 	colorGreen     = lipgloss.Color("#00e5a0")
 	colorYellow    = lipgloss.Color("#f5c542")

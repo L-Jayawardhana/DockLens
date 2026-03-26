@@ -1,12 +1,15 @@
 package main
 
 import (
+	"context"
 	"fmt"
 	"strings"
 	"time"
 
 	tea "github.com/charmbracelet/bubbletea"
 	"github.com/charmbracelet/lipgloss"
+	"github.com/docker/docker/api/types/build"
+	"github.com/docker/docker/api/types/filters"
 	"github.com/docker/docker/client"
 )
 
@@ -52,6 +55,7 @@ type Model struct {
 	showLogo        bool
 	showContextMenu bool
 	contextMenuIdx  int
+	systemStatusMsg string
 
 	// Scroll state
 	detailScrollOffset int
@@ -87,6 +91,10 @@ type dataMsg struct {
 }
 type errorMsg struct{ err error }
 type hideSplashMsg struct{}
+type systemPruneDoneMsg struct {
+	reclaimed uint64
+	removed   int
+}
 
 // ─── Init ─────────────────────────────────────────────────────────────────────
 
@@ -152,7 +160,11 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		m.systemInfo = msg.system
 
 	case errorMsg:
-		// Logging could go here
+		m.systemStatusMsg = fmt.Sprintf("Error: %v", msg.err)
+
+	case systemPruneDoneMsg:
+		m.systemStatusMsg = fmt.Sprintf("Prune complete: removed %d items, reclaimed %s", msg.removed, formatBytes(int64(msg.reclaimed)))
+		return m, m.fetchData(m.containers)
 
 	case tickMsg:
 		// Refresh data from real docker client
@@ -232,9 +244,22 @@ func (m Model) handleKey(msg tea.KeyMsg) (tea.Model, tea.Cmd) {
 
 	// Context menu
 	case "enter", " ":
-		if m.activeTab != TabSystem && listLen > 0 {
+		if m.activeTab == TabSystem {
+			if m.selectedIndex == 2 {
+				m.systemStatusMsg = "Running system prune..."
+				return m, m.runSystemPrune()
+			}
+			return m, nil
+		}
+		if listLen > 0 {
 			m.showContextMenu = true
 			m.contextMenuIdx = 0
+		}
+
+	case "p":
+		if m.activeTab == TabSystem {
+			m.systemStatusMsg = "Running system prune..."
+			return m, m.runSystemPrune()
 		}
 	}
 
@@ -280,8 +305,59 @@ func (m Model) currentListLen() int {
 		return len(m.volumes)
 	case TabNetworks:
 		return len(m.networks)
+	case TabSystem:
+		return 3
 	}
 	return 0
+}
+
+func (m Model) runSystemPrune() tea.Cmd {
+	return func() tea.Msg {
+		if m.cli == nil {
+			return errorMsg{err: fmt.Errorf("Docker client not initialized")}
+		}
+
+		ctx := context.Background()
+		pruneFilters := filters.NewArgs()
+
+		removed := 0
+		reclaimed := uint64(0)
+
+		containersReport, err := m.cli.ContainersPrune(ctx, pruneFilters)
+		if err != nil {
+			return errorMsg{err: fmt.Errorf("containers prune failed: %w", err)}
+		}
+		removed += len(containersReport.ContainersDeleted)
+		reclaimed += containersReport.SpaceReclaimed
+
+		imagesReport, err := m.cli.ImagesPrune(ctx, pruneFilters)
+		if err != nil {
+			return errorMsg{err: fmt.Errorf("images prune failed: %w", err)}
+		}
+		removed += len(imagesReport.ImagesDeleted)
+		reclaimed += imagesReport.SpaceReclaimed
+
+		volumesReport, err := m.cli.VolumesPrune(ctx, pruneFilters)
+		if err != nil {
+			return errorMsg{err: fmt.Errorf("volumes prune failed: %w", err)}
+		}
+		removed += len(volumesReport.VolumesDeleted)
+		reclaimed += volumesReport.SpaceReclaimed
+
+		networksReport, err := m.cli.NetworksPrune(ctx, pruneFilters)
+		if err != nil {
+			return errorMsg{err: fmt.Errorf("networks prune failed: %w", err)}
+		}
+		removed += len(networksReport.NetworksDeleted)
+
+		buildCacheReport, err := m.cli.BuildCachePrune(ctx, build.CachePruneOptions{All: true})
+		if err == nil && buildCacheReport != nil {
+			removed += len(buildCacheReport.CachesDeleted)
+			reclaimed += buildCacheReport.SpaceReclaimed
+		}
+
+		return systemPruneDoneMsg{reclaimed: reclaimed, removed: removed}
+	}
 }
 
 func (m Model) listVisibleRows() int {
@@ -425,7 +501,7 @@ func (m Model) renderRightPanel(w, h int) string {
 	case TabNetworks:
 		return m.renderNetworkDetail(w, h)
 	case TabSystem:
-		return m.renderSystemDashboard(w, h)
+		return m.renderSystemDetail(w, h)
 	}
 	return ""
 }
@@ -548,6 +624,17 @@ func (m Model) renderSystemList(w, h int) []string {
 	}
 	_ = h
 	return lines
+}
+
+func (m Model) renderSystemDetail(w, h int) string {
+	switch m.selectedIndex {
+	case 1:
+		return m.renderSystemDiskUsage(w, h)
+	case 2:
+		return m.renderSystemPrune(w, h)
+	default:
+		return m.renderSystemDashboard(w, h)
+	}
 }
 
 // ─── Container Detail ─────────────────────────────────────────────────────────
@@ -849,6 +936,68 @@ func (m Model) renderSystemDashboard(w, h int) string {
 		Padding(0, 2).
 		Render("  System Prune  [p]  — removes all unused data")
 	sb.WriteString(pruneBtn)
+	if m.systemStatusMsg != "" {
+		sb.WriteString("\n\n" + keyDescStyle.Render("  "+m.systemStatusMsg))
+	}
+
+	_ = h
+	return sb.String()
+}
+
+func (m Model) renderSystemDiskUsage(w, h int) string {
+	s := m.systemInfo
+	var sb strings.Builder
+
+	sb.WriteString(panelTitleStyle.Render("  Docker Disk Usage (system df)") + "\n")
+	sb.WriteString(dividerStyle.Render(strings.Repeat("─", w)) + "\n\n")
+
+	rows := [][]string{
+		{"Disk Total", s.DiskTotal},
+		{"Disk Used", s.DiskUsed},
+		{"Images", s.ImagesSize},
+		{"Volumes", s.VolumesSize},
+		{"Build Cache", s.BuildCacheSize},
+		{"Reclaimable", s.ReclaimableSize},
+	}
+
+	for _, row := range rows {
+		key := detailKeyStyle.Render(row[0])
+		val := metricValueStyle.Render(row[1])
+		sb.WriteString(fmt.Sprintf("  %s  %s\n", key, val))
+	}
+
+	sb.WriteString("\n" + keyDescStyle.Render("  Auto-refresh every 3s"))
+	if m.systemStatusMsg != "" {
+		sb.WriteString("\n" + keyDescStyle.Render("  "+m.systemStatusMsg))
+	}
+
+	_ = h
+	return sb.String()
+}
+
+func (m Model) renderSystemPrune(w, h int) string {
+	var sb strings.Builder
+
+	sb.WriteString(panelTitleStyle.Render("  System Prune") + "\n")
+	sb.WriteString(dividerStyle.Render(strings.Repeat("─", w)) + "\n\n")
+
+	warning := lipgloss.NewStyle().
+		Foreground(colorRed).
+		Bold(true).
+		Render("  This removes ALL unused containers, images, volumes, networks, and build cache.")
+	sb.WriteString(warning + "\n\n")
+
+	btn := lipgloss.NewStyle().
+		Foreground(colorBg).
+		Background(colorRed).
+		Bold(true).
+		Padding(0, 2).
+		Render("  Press [enter] or [p] to run prune  ")
+	sb.WriteString(btn)
+
+	if m.systemStatusMsg != "" {
+		sb.WriteString("\n\n" + keyDescStyle.Render("  "+m.systemStatusMsg))
+	}
 
 	_ = h
 	return sb.String()
