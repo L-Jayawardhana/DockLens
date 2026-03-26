@@ -578,6 +578,10 @@ func (m Model) renderImageList(w, h int) []string {
 
 func (m Model) renderVolumeList(w, h int) []string {
 	var lines []string
+	availW := w - 4 // style padding (L/R) + list marker prefix
+	if availW < 10 {
+		availW = 10
+	}
 	for i, v := range m.volumes {
 		if i < m.listScrollOffset {
 			continue
@@ -585,20 +589,29 @@ func (m Model) renderVolumeList(w, h int) []string {
 		if len(lines) >= h {
 			break
 		}
-		name := truncate(v.Name, w-10)
-		size := lipgloss.NewStyle().Foreground(colorGray).Render(v.Size)
-		isOrphaned := !strings.HasPrefix(v.Name, "orphaned")
-		_ = isOrphaned
-		line := fmt.Sprintf("%-*s %s", w-len(v.Size)-4, name, size)
+		prefix := "  "
 		if strings.HasPrefix(v.Name, "orphaned") {
-			line = lipgloss.NewStyle().Foreground(colorYellow).Render("⚠ ") + line
-		} else {
-			line = "  " + line
+			prefix = lipgloss.NewStyle().Foreground(colorYellow).Render("⚠ ")
 		}
+
+		sizeRaw := v.Size
+		sizeStr := lipgloss.NewStyle().Foreground(colorGray).Render(sizeRaw)
+		sizeW := lipgloss.Width(sizeRaw)
+		prefixW := lipgloss.Width(prefix)
+		nameWidth := availW - prefixW - sizeW - 1
+		if nameWidth < 1 {
+			nameWidth = 1
+		}
+		name := truncate(v.Name, nameWidth)
+		gap := availW - prefixW - lipgloss.Width(name) - sizeW
+		if gap < 1 {
+			gap = 1
+		}
+		line := prefix + name + strings.Repeat(" ", gap) + sizeStr
 		if i == m.selectedIndex {
-			lines = append(lines, selectedItemStyle.Width(w).Render("▶ "+strings.TrimPrefix(line, "  ")))
+			lines = append(lines, selectedItemStyle.Render("▶ "+line))
 		} else {
-			lines = append(lines, listItemStyle.Width(w).Render(line))
+			lines = append(lines, listItemStyle.Render("  "+line))
 		}
 	}
 	return lines
