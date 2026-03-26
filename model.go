@@ -621,7 +621,7 @@ func (m Model) renderSystemList(w, h int) []string {
 	var lines []string
 	for i, item := range items {
 		if i == m.selectedIndex {
-			lines = append(lines, selectedItemStyle.Width(w).Render("▶ "+strings.TrimSpace(item)))
+			lines = append(lines, listItemStyle.Width(w).Render("▶ "+strings.TrimSpace(item)))
 		} else {
 			lines = append(lines, listItemStyle.Width(w).Render(item))
 		}
@@ -889,9 +889,14 @@ func (m Model) renderSystemDashboard(w, h int) string {
 	}
 
 	var cardParts []string
-	cardW := (w - 3) / 4
+	gap := 1
+	cardW := (w - gap*(len(cards)-1) - 8) / len(cards)
+	if cardW < 12 {
+		cardW = 12
+	}
+	cardStyle := dashboardBoxStyle.Copy().Padding(0, 0)
 	for _, c := range cards {
-		box := dashboardBoxStyle.Width(cardW).Render(
+		box := cardStyle.Width(cardW).Render(
 			lipgloss.NewStyle().Foreground(colorGray).Render(c.label) + "\n" +
 				metricValueGreenStyle.Render(c.value),
 		)

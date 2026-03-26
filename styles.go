@@ -188,7 +188,7 @@ var (
 
 	// System dashboard
 	dashboardBoxStyle = lipgloss.NewStyle().
-				Background(lipgloss.Color("#0f0f1e")).
+				//Background(lipgloss.Color("#0f0f1e")).
 				Border(lipgloss.RoundedBorder(), true).
 				BorderForeground(colorAccent).
 				Padding(0, 1)
