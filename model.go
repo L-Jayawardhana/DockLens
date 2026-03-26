@@ -1109,13 +1109,30 @@ func (m Model) renderWelcomePage() string {
 		quitHint,
 	)
 
-	return lipgloss.Place(
+	creditsStyle := lipgloss.NewStyle().
+		Foreground(colorGray).
+		Align(lipgloss.Center)
+
+	credits := creditsStyle.Width(m.width).Render(
+		"Author: Lakdinu Jayawardhana\n" +
+			"GitHub: L-Jayawardhana\n" +
+			"Email: lakdinurameshjayawardhana@gmail.com",
+	)
+
+	welcomeHeight := m.height - 4
+	if welcomeHeight < 1 {
+		welcomeHeight = m.height
+	}
+
+	centered := lipgloss.Place(
 		m.width,
-		m.height,
+		welcomeHeight,
 		lipgloss.Center,
 		lipgloss.Center,
 		content,
 	)
+
+	return centered + "\n" + credits
 }
 
 // ─── Help Overlay ─────────────────────────────────────────────────────────────
