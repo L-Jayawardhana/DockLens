@@ -541,6 +541,10 @@ func (m Model) renderContainerList(w, h int) []string {
 
 func (m Model) renderImageList(w, h int) []string {
 	var lines []string
+	availW := w - 4 // style padding (L/R) + list marker prefix
+	if availW < 10 {
+		availW = 10
+	}
 	for i, img := range m.images {
 		if i < m.listScrollOffset {
 			continue
@@ -548,14 +552,23 @@ func (m Model) renderImageList(w, h int) []string {
 		if len(lines) >= h {
 			break
 		}
-		name := truncate(fmt.Sprintf("%s:%s", img.Name, img.Tag), w-10)
 		size := formatBytes(img.Size)
+		sizeW := lipgloss.Width(size)
+		nameWidth := availW - sizeW - 1 // one space between name and size
+		if nameWidth < 1 {
+			nameWidth = 1
+		}
+		name := truncate(fmt.Sprintf("%s:%s", img.Name, img.Tag), nameWidth)
 		sizeStr := lipgloss.NewStyle().Foreground(colorGray).Render(size)
-		line := fmt.Sprintf("%-*s %s", w-len(size)-4, name, sizeStr)
+		gap := availW - lipgloss.Width(name) - sizeW
+		if gap < 1 {
+			gap = 1
+		}
+		line := name + strings.Repeat(" ", gap) + sizeStr
 		if i == m.selectedIndex {
-			lines = append(lines, selectedItemStyle.Width(w).Render("▶ "+line))
+			lines = append(lines, selectedItemStyle.Render("▶ "+line))
 		} else {
-			lines = append(lines, listItemStyle.Width(w).Render("  "+line))
+			lines = append(lines, listItemStyle.Render("  "+line))
 		}
 	}
 	return lines
@@ -1265,12 +1278,12 @@ func truncate(s string, max int) string {
 func formatBytes(b int64) string {
 	const unit = 1024
 	if b < unit {
-		return fmt.Sprintf("%d B", b)
+		return fmt.Sprintf("%dB", b)
 	}
 	div, exp := int64(unit), 0
 	for n := b / unit; n >= unit; n /= unit {
 		div *= unit
 		exp++
 	}
-	return fmt.Sprintf("%.1f %cB", float64(b)/float64(div), "KMGTPE"[exp])
+	return fmt.Sprintf("%.1f%cB", float64(b)/float64(div), "KMGTPE"[exp])
 }
