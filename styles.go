@@ -47,13 +47,13 @@ var (
 			PaddingRight(2).
 			Border(lipgloss.Border{
 			Top:         "─",
-			Bottom:      " ",
+			Bottom:      "─",
 			Left:        "│",
 			Right:       "│",
 			TopLeft:     "╭",
 			TopRight:    "╮",
-			BottomLeft:  "│",
-			BottomRight: "│",
+			BottomLeft:  "╰",
+			BottomRight: "╯",
 		}, true).
 		BorderForeground(colorCyan)
 
@@ -64,13 +64,13 @@ var (
 				PaddingRight(2).
 				Border(lipgloss.Border{
 			Top:         "─",
-			Bottom:      " ",
+			Bottom:      "─",
 			Left:        "│",
 			Right:       "│",
 			TopLeft:     "╭",
 			TopRight:    "╮",
-			BottomLeft:  "│",
-			BottomRight: "│",
+			BottomLeft:  "╰",
+			BottomRight: "╯",
 		}, true).
 		BorderForeground(colorBorder)
 
