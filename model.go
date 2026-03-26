@@ -621,6 +621,10 @@ func (m Model) renderVolumeList(w, h int) []string {
 
 func (m Model) renderNetworkList(w, h int) []string {
 	var lines []string
+	availW := w - 4 // style padding (L/R) + list marker prefix
+	if availW < 10 {
+		availW = 10
+	}
 	for i, n := range m.networks {
 		if i < m.listScrollOffset {
 			continue
@@ -628,13 +632,23 @@ func (m Model) renderNetworkList(w, h int) []string {
 		if len(lines) >= h {
 			break
 		}
-		name := truncate(n.Name, w-10)
-		driver := lipgloss.NewStyle().Foreground(colorGray).Render(n.Driver)
-		line := fmt.Sprintf("%-*s %s", w-len(n.Driver)-4, name, driver)
+		driverRaw := n.Driver
+		driver := lipgloss.NewStyle().Foreground(colorGray).Render(driverRaw)
+		driverW := lipgloss.Width(driverRaw)
+		nameWidth := availW - driverW - 1
+		if nameWidth < 1 {
+			nameWidth = 1
+		}
+		name := truncate(n.Name, nameWidth)
+		gap := availW - lipgloss.Width(name) - driverW
+		if gap < 1 {
+			gap = 1
+		}
+		line := name + strings.Repeat(" ", gap) + driver
 		if i == m.selectedIndex {
-			lines = append(lines, selectedItemStyle.Width(w).Render("▶ "+line))
+			lines = append(lines, selectedItemStyle.Render("▶ "+line))
 		} else {
-			lines = append(lines, listItemStyle.Width(w).Render("  "+line))
+			lines = append(lines, listItemStyle.Render("  "+line))
 		}
 	}
 	return lines
