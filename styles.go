@@ -29,23 +29,23 @@ var (
 
 	// Header bar
 	headerStyle = lipgloss.NewStyle().
-			//Background(colorBg).
-			Foreground(colorLightGray).
-			PaddingLeft(2).
-			PaddingRight(2)
+		//Background(colorBg).
+		Foreground(colorLightGray).
+		PaddingLeft(2).
+		PaddingRight(2)
 
 	// Tab bar
 	tabBarStyle = lipgloss.NewStyle().
-			//Background(colorBg).
-			PaddingLeft(1)
+		//Background(colorBg).
+		PaddingLeft(1)
 
 	activeTabStyle = lipgloss.NewStyle().
 			Foreground(colorCyan).
-			//Background(colorBgPanel).
-			Bold(true).
-			PaddingLeft(2).
-			PaddingRight(2).
-			Border(lipgloss.Border{
+		//Background(colorBgPanel).
+		Bold(true).
+		PaddingLeft(2).
+		PaddingRight(2).
+		Border(lipgloss.Border{
 			Top:         "─",
 			Bottom:      "─",
 			Left:        "│",
@@ -59,10 +59,10 @@ var (
 
 	inactiveTabStyle = lipgloss.NewStyle().
 				Foreground(colorGray).
-				//Background(colorBg).
-				PaddingLeft(2).
-				PaddingRight(2).
-				Border(lipgloss.Border{
+		//Background(colorBg).
+		PaddingLeft(2).
+		PaddingRight(2).
+		Border(lipgloss.Border{
 			Top:         "─",
 			Bottom:      "─",
 			Left:        "│",
@@ -76,14 +76,14 @@ var (
 
 	// Panels
 	leftPanelStyle = lipgloss.NewStyle().
-			//Background(colorBgPanel).
-			Border(lipgloss.RoundedBorder(), true).
-			BorderForeground(colorBorder)
+		//Background(colorBgPanel).
+		Border(lipgloss.RoundedBorder(), true).
+		BorderForeground(colorBorder)
 
 	rightPanelStyle = lipgloss.NewStyle().
-			//Background(colorBgPanel).
-			Border(lipgloss.RoundedBorder(), true).
-			BorderForeground(colorBorder)
+		//Background(colorBgPanel).
+		Border(lipgloss.RoundedBorder(), true).
+		BorderForeground(colorBorder)
 
 	// List item styles
 	listItemStyle = lipgloss.NewStyle().
@@ -93,10 +93,10 @@ var (
 
 	selectedItemStyle = lipgloss.NewStyle().
 				Foreground(colorCyan).
-				//Background(lipgloss.Color("#111122")).
-				Bold(true).
-				PaddingLeft(1).
-				PaddingRight(1)
+		//Background(lipgloss.Color("#111122")).
+		Bold(true).
+		PaddingLeft(1).
+		PaddingRight(1)
 
 	// Status badge styles
 	statusRunningStyle = lipgloss.NewStyle().
@@ -124,10 +124,10 @@ var (
 
 	// Footer
 	footerStyle = lipgloss.NewStyle().
-			//Background(colorBg).
-			Foreground(colorGray).
-			PaddingLeft(2).
-			PaddingRight(2)
+		//Background(colorBg).
+		Foreground(colorGray).
+		PaddingLeft(2).
+		PaddingRight(2)
 
 	keyStyle = lipgloss.NewStyle().
 			Foreground(colorBgPanel).

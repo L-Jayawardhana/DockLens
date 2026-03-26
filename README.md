@@ -10,13 +10,29 @@ Built entirely in Go, it interacts directly with the Docker Engine SDK to provid
 
 ---
 
+## 🖼️ UI Preview
+
+![DockLens Welcome Screen](assets/docklens-welcome.png)
+
+---
+
+## 🆕 Latest Upgrades
+
+- **🎬 Welcome Screen**: New startup page with DockLens branding, quick description, and `enter` to continue.
+- **👤 Author Credits**: Welcome screen footer now includes author, GitHub username, and contact email.
+- **💾 System Disk Usage**: System tab now shows real Docker `system df` usage values (images, volumes, cache, reclaimable).
+- **🧹 Working System Prune**: System Prune now runs real Docker prune actions and shows reclaim summary.
+- **🧩 Tab UI Fixes**: Top tab boxes now render with complete bottom borders.
+
+---
+
 ## ✨ Features
 
 - **🚢 Container Management**: View all containers (running and stopped) with real-time status badges.
 - **📊 Live Resource Monitoring**: Dynamic CPU and Memory usage percentages with visual progress bars.
 - **📜 Integrated Logs**: Scroll through recent container logs directly within the TUI.
 - **🖼️ Image Explorer**: List local Docker images, tags, and sizes.
-- **� Volume & Network Insights**: Simple overview of your Docker storage and networking layers.
+- **📦 Volume & Network Insights**: Simple overview of your Docker storage and networking layers.
 - **⚡ Auto-Refresh**: 3-second live refresh cycle keeps your view perfectly synced with the Docker daemon.
 - **⌨️ Vim-Style Navigation**: Fluid navigation using `j`/`k` or arrow keys.
 - **🎨 Modern Aesthetics**: A premium "Command Center" interface powered by Lip Gloss.
