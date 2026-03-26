@@ -138,11 +138,11 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	case tea.WindowSizeMsg:
 		m.width = msg.Width
 		m.height = msg.Height
-		if m.showLogo && m.width > 0 {
-			m.showLogo = false
-		}
 
 	case tea.KeyMsg:
+		if m.showLogo {
+			return m.handleWelcomeKey(msg)
+		}
 		if m.showHelp {
 			m.showHelp = false
 			return m, nil
@@ -384,6 +384,10 @@ func (m Model) contextMenuActions() []string {
 func (m Model) View() string {
 	if m.width == 0 {
 		return "Loading..."
+	}
+
+	if m.showLogo {
+		return m.renderWelcomePage()
 	}
 
 	if m.showHelp {
@@ -1065,6 +1069,52 @@ func (m Model) renderFooter() string {
 
 	return footerStyle.Width(m.width).Render(
 		content + strings.Repeat(" ", pad) + right,
+	)
+}
+
+func (m Model) handleWelcomeKey(msg tea.KeyMsg) (tea.Model, tea.Cmd) {
+	switch msg.String() {
+	case "enter":
+		m.showLogo = false
+		return m, nil
+	case "q", "ctrl+c":
+		return m, tea.Quit
+	}
+	return m, nil
+}
+
+func (m Model) renderWelcomePage() string {
+	logoStyle := lipgloss.NewStyle().
+		Foreground(lipgloss.Color("#00f0f9")).
+		Padding(1, 2)
+
+	desc := lipgloss.NewStyle().
+		Foreground(colorLightGray).
+		Render("DockLens is a fast terminal dashboard for Docker.\nMonitor containers, images, volumes, networks, and system usage in real time.")
+
+	hint := lipgloss.NewStyle().
+		Foreground(colorCyan).
+		Bold(true).
+		Render("Press Enter to continue")
+
+	quitHint := keyDescStyle.Render("Press q to quit")
+
+	content := lipgloss.JoinVertical(
+		lipgloss.Center,
+		logoStyle.Render(logo),
+		"",
+		desc,
+		"",
+		hint,
+		quitHint,
+	)
+
+	return lipgloss.Place(
+		m.width,
+		m.height,
+		lipgloss.Center,
+		lipgloss.Center,
+		content,
 	)
 }
 
