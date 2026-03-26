@@ -621,7 +621,7 @@ func (m Model) renderSystemList(w, h int) []string {
 	var lines []string
 	for i, item := range items {
 		if i == m.selectedIndex {
-			lines = append(lines, listItemStyle.Width(w).Render("▶ "+strings.TrimSpace(item)))
+			lines = append(lines, selectedItemStyle.Width(w).Render("▶ "+strings.TrimSpace(item)))
 		} else {
 			lines = append(lines, listItemStyle.Width(w).Render(item))
 		}
