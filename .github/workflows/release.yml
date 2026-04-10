@@ -1,0 +1,57 @@
+# .github/workflows/release.yml
+# This file lives at: .github/workflows/release.yml in your DockLens repo
+#
+# WHAT THIS DOES:
+# When you push a git tag starting with "v" (like v1.0.0), this workflow:
+#   1. Checks out your code
+#   2. Sets up Go
+#   3. Runs GoReleaser which:
+#      - Compiles binaries for Linux/Mac/Windows
+#      - Creates a GitHub Release with all the files
+#      - Updates your Homebrew tap automatically
+
+name: Release
+
+# Only trigger on version tags like v1.0.0, v1.2.3, etc.
+on:
+  push:
+    tags:
+      - "v*"
+
+# Needed to create the GitHub Release
+permissions:
+  contents: write
+
+jobs:
+  release:
+    name: Build and Release
+    runs-on: ubuntu-latest
+
+    steps:
+      # Step 1: Get your source code
+      - name: Checkout code
+        uses: actions/checkout@v4
+        with:
+          # fetch ALL history so GoReleaser can generate a proper changelog
+          fetch-depth: 0
+
+      # Step 2: Install Go (match your go.mod version)
+      - name: Set up Go
+        uses: actions/setup-go@v5
+        with:
+          go-version: "1.21"
+
+      # Step 3: Run GoReleaser — this does everything
+      - name: Run GoReleaser
+        uses: goreleaser/goreleaser-action@v5
+        with:
+          distribution: goreleaser
+          version: latest
+          # --clean removes the dist/ folder before building (prevents stale files)
+          args: release --clean
+        env:
+          # GITHUB_TOKEN is automatically provided by GitHub Actions — you don't need to set this
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          # This token is for pushing to your homebrew-docklens tap repo
+          # You MUST add this secret manually — see the guide below
+          HOMEBREW_TAP_GITHUB_TOKEN: ${{ secrets.HOMEBREW_TAP_GITHUB_TOKEN }}

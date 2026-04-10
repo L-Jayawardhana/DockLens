@@ -1,0 +1,127 @@
+# .goreleaser.yaml
+# This file lives in the ROOT of your DockLens repo.
+# GoReleaser reads this when you push a git tag like v1.0.0
+
+version: 2
+
+# ─── Project metadata ─────────────────────────────────────────────────────────
+project_name: docklens
+
+# ─── Where the binary comes from ──────────────────────────────────────────────
+builds:
+  - id: docklens
+    # Path to your main.go — adjust if yours is in a subdirectory like ./cmd/docklens
+    main: .
+    binary: docklens
+
+    # Inject build-time variables so `docklens --version` works
+    ldflags:
+      - -s -w
+      - -X main.Version={{.Version}}
+      - -X main.Commit={{.Commit}}
+      - -X main.BuildDate={{.Date}}
+
+    # Every OS + CPU combo you want to support
+    goos:
+      - linux
+      - darwin
+      - windows
+
+    goarch:
+      - amd64
+      - arm64
+
+    # Skip combinations that don't make sense
+    ignore:
+      - goos: windows
+        goarch: arm64
+
+    # Environment variables set during build
+    env:
+      - CGO_ENABLED=0   # Static binary — no external C libraries needed
+
+# ─── How to package the binaries ──────────────────────────────────────────────
+archives:
+  - id: default
+    name_template: >-
+      {{ .ProjectName }}_
+      {{- .Version }}_
+      {{- .Os }}_
+      {{- .Arch }}
+
+    # On Linux/Mac: .tar.gz  |  On Windows: .zip
+    format_overrides:
+      - goos: windows
+        format: zip
+
+    # Files to bundle alongside the binary in the archive
+    files:
+      - README.md
+      - LICENSE
+
+# ─── Checksums file (for verifying downloads) ─────────────────────────────────
+checksum:
+  name_template: "checksums.txt"
+
+# ─── Changelog auto-generation from git commits ───────────────────────────────
+changelog:
+  sort: asc
+  filters:
+    exclude:
+      - "^docs:"
+      - "^test:"
+      - "^ci:"
+      - "merge conflict"
+      - Merge pull request
+      - Merge remote-tracking branch
+      - Merge branch
+
+# ─── Homebrew tap (Mac + Linux install via brew) ──────────────────────────────
+# GoReleaser will automatically push the formula to your tap repo.
+# You must create the repo "homebrew-docklens" on GitHub first (see guide).
+brews:
+  - name: docklens
+    repository:
+      owner: L-Jayawardhana       # Your GitHub username
+      name: homebrew-docklens     # The tap repo you'll create
+      token: "{{ .Env.HOMEBREW_TAP_GITHUB_TOKEN }}"
+
+    # Where brew puts the binary
+    directory: Formula
+
+    homepage: "https://github.com/L-Jayawardhana/DockLens"
+    description: "A terminal UI for managing Docker containers, images, volumes, and networks."
+    license: "MIT"
+
+    # These are the exact install steps brew will run
+    install: |
+      bin.install "docklens"
+
+    # Optional: what brew test runs to verify install
+    test: |
+      system "#{bin}/docklens", "--version"
+
+# ─── GitHub Release settings ──────────────────────────────────────────────────
+release:
+  github:
+    owner: L-Jayawardhana
+    name: DockLens
+
+  # The header text at the top of each GitHub Release
+  header: |
+    ## DockLens {{ .Tag }}
+    A terminal UI for Docker — manage containers, images, volumes and networks from your keyboard.
+
+  footer: |
+    ---
+    **Full Changelog**: https://github.com/L-Jayawardhana/DockLens/compare/{{ .PreviousTag }}...{{ .Tag }}
+
+    ### Install
+    ```bash
+    # Mac / Linux (Homebrew)
+    brew tap L-Jayawardhana/docklens
+    brew install docklens
+
+    # Universal install script
+    curl -fsSL https://raw.githubusercontent.com/L-Jayawardhana/DockLens/main/scripts/install.sh | sh
+    ```
