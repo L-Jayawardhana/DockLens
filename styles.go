@@ -202,7 +202,7 @@ var (
 
 	// Help overlay
 	helpOverlayStyle = lipgloss.NewStyle().
-				Background(lipgloss.Color("#0a0a18")).
+				//Background(lipgloss.Color("#0a0a18")).
 				Border(lipgloss.RoundedBorder(), true).
 				BorderForeground(colorCyan).
 				Padding(1, 3)

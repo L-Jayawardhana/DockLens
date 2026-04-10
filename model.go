@@ -95,6 +95,10 @@ type systemPruneDoneMsg struct {
 	reclaimed uint64
 	removed   int
 }
+type logsMsg struct {
+	id   string
+	logs []LogLine
+}
 
 // ─── Init ─────────────────────────────────────────────────────────────────────
 
@@ -130,6 +134,19 @@ func (m Model) fetchData(prev []Container) tea.Cmd {
 	}
 }
 
+func (m Model) fetchLogsCmd(id string) tea.Cmd {
+	return func() tea.Msg {
+		if m.cli == nil {
+			return errorMsg{err: fmt.Errorf("Docker client not initialized")}
+		}
+		logs, err := getContainerLogs(m.cli, id)
+		if err != nil {
+			return errorMsg{err: err}
+		}
+		return logsMsg{id: id, logs: logs}
+	}
+}
+
 // ─── Update ───────────────────────────────────────────────────────────────────
 
 func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
@@ -161,6 +178,14 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 
 	case errorMsg:
 		m.systemStatusMsg = fmt.Sprintf("Error: %v", msg.err)
+
+	case logsMsg:
+		for i, c := range m.containers {
+			if c.ID == msg.id {
+				m.containers[i].Logs = msg.logs
+				break
+			}
+		}
 
 	case systemPruneDoneMsg:
 		m.systemStatusMsg = fmt.Sprintf("Prune complete: removed %d items, reclaimed %s", msg.removed, formatBytes(int64(msg.reclaimed)))
@@ -243,7 +268,22 @@ func (m Model) handleKey(msg tea.KeyMsg) (tea.Model, tea.Cmd) {
 		}
 
 	// Context menu
-	case "enter", " ":
+	case "enter":
+		if m.activeTab == TabSystem {
+			if m.selectedIndex == 2 {
+				m.systemStatusMsg = "Running system prune..."
+				return m, m.runSystemPrune()
+			}
+			return m, nil
+		}
+		if m.activeTab == TabContainers && listLen > 0 && m.containers[m.selectedIndex].Status == StatusRunning {
+			return m, m.fetchLogsCmd(m.containers[m.selectedIndex].ID)
+		} else if listLen > 0 {
+			m.showContextMenu = true
+			m.contextMenuIdx = 0
+		}
+		
+	case " ":
 		if m.activeTab == TabSystem {
 			if m.selectedIndex == 2 {
 				m.systemStatusMsg = "Running system prune..."
@@ -290,6 +330,11 @@ func (m Model) handleContextMenuKey(msg tea.KeyMsg) (tea.Model, tea.Cmd) {
 		m.showContextMenu = false
 	case "enter":
 		m.showContextMenu = false
+		if m.activeTab == TabContainers && m.contextMenuIdx == 0 {
+			if len(m.containers) > 0 {
+				return m, m.fetchLogsCmd(m.containers[m.selectedIndex].ID)
+			}
+		}
 		// Action handling would trigger Docker API calls here
 	}
 	return m, nil
@@ -416,7 +461,7 @@ func (m Model) View() string {
 }
 
 func (m Model) renderHeader() string {
-	title := logoStyle.Render("  DOCKERLENS")
+	title := logoStyle.Render("  DOCKLENS")
 	version := lipgloss.NewStyle().Foreground(colorGray).Render("v1.0.0")
 	hostInfo := lipgloss.NewStyle().Foreground(colorDimCyan).Render("⬡ docker.sock  local")
 
@@ -514,6 +559,10 @@ func (m Model) renderRightPanel(w, h int) string {
 
 func (m Model) renderContainerList(w, h int) []string {
 	var lines []string
+	if len(m.containers) == 0 {
+		lines = append(lines, listItemStyle.Width(w).Render("  no containers are running"))
+		return lines
+	}
 	visibleItems := h
 
 	for i, c := range m.containers {
@@ -685,40 +734,13 @@ func (m Model) renderSystemDetail(w, h int) string {
 
 func (m Model) renderContainerDetail(w, h int) string {
 	if len(m.containers) == 0 {
-		return ""
+		return "  no containers are running"
 	}
 
 	var sb strings.Builder
-
-	// ─── Summary Table of All Containers ─────────────────────────────────────
-	sb.WriteString(detailSectionStyle.Render("  ALL RUNNING CONTAINERS") + "\n")
-
-	tableHeader := fmt.Sprintf("  %-25s %-12s %-10s %-10s", "NAME", "STATUS", "CPU", "MEM")
-	sb.WriteString(lipgloss.NewStyle().Foreground(colorGray).Bold(true).Render(tableHeader) + "\n")
-	sb.WriteString(dividerStyle.Render(strings.Repeat("─", w)) + "\n")
-
-	for i, c := range m.containers {
-		status := string(c.Status)
-		if c.Status == StatusRunning {
-			status = lipgloss.NewStyle().Foreground(colorGreen).Render("running")
-		}
-
-		memStr := fmt.Sprintf("%.1f MiB", c.Memory)
-		cpuStr := fmt.Sprintf("%.1f%%", c.CPU)
-
-		line := fmt.Sprintf("%-25s %-12s %-10s %-10s",
-			truncate(c.Name, 24), status, cpuStr, memStr)
-
-		if i == m.selectedIndex {
-			sb.WriteString(lipgloss.NewStyle().Background(colorDimCyan).Foreground(colorBg).Render("  "+line) + "\n")
-		} else {
-			sb.WriteString("  " + line + "\n")
-		}
-	}
-	sb.WriteString("\n")
+	c := m.containers[m.selectedIndex]
 
 	// ─── Selected Container Details ──────────────────────────────────────────
-	c := m.containers[m.selectedIndex]
 	sb.WriteString(detailSectionStyle.Render("  DETAILED INFO: "+c.Name) + "  " + renderStatusBadge(c.Status) + "\n")
 	sb.WriteString(dividerStyle.Render(strings.Repeat("─", w)) + "\n")
 
@@ -758,7 +780,8 @@ func (m Model) renderContainerDetail(w, h int) string {
 		logStart = len(c.Logs)
 	}
 
-	totalVisibleLogs := h - 18 // Estimate remaining space
+	usedLines := strings.Count(sb.String(), "\n")
+	totalVisibleLogs := h - usedLines - 2 // 2 lines for hints at the bottom
 	if totalVisibleLogs < 0 {
 		totalVisibleLogs = 0
 	}
@@ -772,6 +795,10 @@ func (m Model) renderContainerDetail(w, h int) string {
 		ts := logTimestampStyle.Render(log.Timestamp)
 		text := logTextStyle.Render(truncate(log.Text, w-22))
 		sb.WriteString(fmt.Sprintf("  %s  %s\n", ts, text))
+	}
+	
+	for i := 0; i < totalVisibleLogs - len(logsToShow); i++ {
+		sb.WriteString("\n")
 	}
 
 	// Key hints
@@ -1205,7 +1232,7 @@ func (m Model) renderHelp() string {
 	}
 
 	var sb strings.Builder
-	sb.WriteString(logoStyle.Render("  DOCKERLENS") + "  " +
+	sb.WriteString(logoStyle.Render("  DOCKLENS") + "  " +
 		lipgloss.NewStyle().Foreground(colorGray).Render("Keyboard Reference") + "\n\n")
 
 	for _, section := range sections {
@@ -1223,11 +1250,7 @@ func (m Model) renderHelp() string {
 	content := helpOverlayStyle.Render(sb.String())
 
 	// Center in terminal
-	vPad := (m.height - lipgloss.Height(content)) / 2
-	hPad := (m.width - lipgloss.Width(content)) / 2
-
-	return strings.Repeat("\n", vPad) +
-		strings.Repeat(" ", hPad) + content
+	return lipgloss.Place(m.width, m.height, lipgloss.Center, lipgloss.Center, content)
 }
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────

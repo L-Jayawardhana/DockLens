@@ -13,6 +13,8 @@ import (
 	"github.com/docker/docker/api/types/network"
 	"github.com/docker/docker/api/types/volume"
 	"github.com/docker/docker/client"
+	"github.com/docker/docker/pkg/stdcopy"
+	"bytes"
 )
 
 // ─── Docker Data Types ────────────────────────────────────────────────────────
@@ -102,8 +104,10 @@ func getContainers(cli *client.Client, prev []Container) ([]Container, error) {
 
 	// Index previous stats for fast lookup
 	prevMap := make(map[string]*container.StatsResponse)
+	prevLogsMap := make(map[string][]LogLine)
 	for _, p := range prev {
 		prevMap[p.ID] = p.RawStats
+		prevLogsMap[p.ID] = p.Logs
 	}
 
 	var results []Container
@@ -131,6 +135,7 @@ func getContainers(cli *client.Client, prev []Container) ([]Container, error) {
 			Ports:   strings.Join(ports, ", "),
 			Created: time.Unix(c.Created, 0),
 			Network: "bridge",
+			Logs:    prevLogsMap[id12],
 		}
 
 		// Fetch real stats if running
@@ -159,6 +164,37 @@ func getContainers(cli *client.Client, prev []Container) ([]Container, error) {
 		results = append(results, res)
 	}
 	return results, nil
+}
+
+func getContainerLogs(cli *client.Client, containerID string) ([]LogLine, error) {
+	ctx := context.Background()
+	options := container.LogsOptions{ShowStdout: true, ShowStderr: true, Tail: "100"}
+	out, err := cli.ContainerLogs(ctx, containerID, options)
+	if err != nil {
+		return nil, err
+	}
+	defer out.Close()
+
+	var stdout, stderr bytes.Buffer
+	_, err = stdcopy.StdCopy(&stdout, &stderr, out)
+	if err != nil {
+		return nil, err
+	}
+
+	allLogs := stdout.String() + stderr.String()
+	lines := strings.Split(strings.TrimSpace(allLogs), "\n")
+	
+	var logLines []LogLine
+	for _, line := range lines {
+		if line == "" {
+			continue
+		}
+		logLines = append(logLines, LogLine{
+			Timestamp: time.Now().Format("15:04:05"), 
+			Text:      line,
+		})
+	}
+	return logLines, nil
 }
 
 func calculateCPUPercent(current, previous *container.StatsResponse) float64 {
