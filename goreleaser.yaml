@@ -52,7 +52,7 @@ archives:
     # On Linux/Mac: .tar.gz  |  On Windows: .zip
     format_overrides:
       - goos: windows
-        format: zip
+        formats: zip
 
     # Files to bundle alongside the binary in the archive
     files:
@@ -106,6 +106,13 @@ release:
   github:
     owner: L-Jayawardhana
     name: DockLens
+
+  # If this release already has assets with the same name, remove and re-upload.
+  # This fixes reruns/retags of the same version tag (e.g. v1.0.0).
+  replace_existing_artifacts: true
+
+  # Replace release notes when reusing an existing tag/release.
+  mode: replace
 
   # The header text at the top of each GitHub Release
   header: |
