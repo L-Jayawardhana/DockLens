@@ -1185,10 +1185,17 @@ func (m Model) renderWelcomePage() string {
 		Foreground(colorGray).
 		Align(lipgloss.Center)
 
+	creditsLine := lipgloss.JoinHorizontal(
+		lipgloss.Left,
+		"Developer: Lakdinu Jayawardhana",
+		"   •   ",
+		"GitHub: L-Jayawardhana",
+		"   •   ",
+		"Email: lakdinurameshjayawardhana@gmail.com",
+	)
+
 	credits := creditsStyle.Width(m.width).Render(
-		"Author: Lakdinu Jayawardhana\n" +
-			"GitHub: L-Jayawardhana\n" +
-			"Email: lakdinurameshjayawardhana@gmail.com",
+		creditsLine,
 	)
 
 	welcomeHeight := m.height - 4
