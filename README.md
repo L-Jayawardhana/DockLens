@@ -18,11 +18,13 @@ Built entirely in Go, it interacts directly with the Docker Engine SDK to provid
 
 ## 🆕 Latest Upgrades
 
+- **🚀 v1.0.0 Release**: First public release with install script, version command, and all core features.
 - **🎬 Welcome Screen**: New startup page with DockLens branding, quick description, and `enter` to continue.
-- **👤 Author Credits**: Welcome screen footer now includes author, GitHub username, and contact email.
+- **👤 Developer Credits**: Welcome screen footer now includes developer, GitHub username, and contact email in a clean horizontal layout.
 - **💾 System Disk Usage**: System tab now shows real Docker `system df` usage values (images, volumes, cache, reclaimable).
 - **🧹 Working System Prune**: System Prune now runs real Docker prune actions and shows reclaim summary.
 - **🧩 Tab UI Fixes**: Top tab boxes now render with complete bottom borders.
+- **📜 Live Container Logs**: Running containers can fetch and display real logs directly in the detail view.
 
 ---
 
@@ -56,29 +58,21 @@ Built entirely in Go, it interacts directly with the Docker Engine SDK to provid
 * Docker daemon running.
 * Permissions to access `/var/run/docker.sock` (typically by being in the `docker` group).
 
-### Installation
+---
 
-1. Clone the repository:
-   ```bash
-   git clone https://github.com/lakdinu/DockLens.git
-   cd DockLens
-   ```
+### Quick Install (Latest Release)
 
-2. Sync dependencies:
-   ```bash
-   go mod tidy
-   ```
+Install with one command:
 
-3. Run DockLens:
-   ```bash
-   go run .
-   ```
+```bash
+curl -fsSL https://raw.githubusercontent.com/L-Jayawardhana/DockLens/main/scripts/install.sh | sh
+```
 
-4. Build a binary:
-   ```bash
-   go build -o docklens
-   ./docklens
-   ```
+Verify installed version:
+
+```bash
+docklens --version
+```
 
 ---
 
