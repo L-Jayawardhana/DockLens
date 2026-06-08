@@ -81,6 +81,12 @@ Verify installed version:
 docklens --version
 ```
 
+After installation you can run DockLens from your terminal with:
+
+```bash
+docklens
+```
+
 ### macOS (Homebrew)
 
 Mac users can install DockLens via Homebrew with the following commands:
@@ -90,6 +96,12 @@ brew tap L-Jayawardhana/docklens
 brew install docklens
 # verify installation
 docklens --version
+```
+
+After installation you can run DockLens from your terminal with:
+
+```bash
+docklens
 ```
 
 ---
