@@ -60,6 +60,13 @@ Built entirely in Go, it interacts directly with the Docker Engine SDK to provid
 
 ---
 
+### Platform & Support
+
+- **Development environment:** This project was developed in an Arch Linux environment.
+- **Supported platforms:** For now it is supported only in iOS and Linux.
+
+---
+
 ### Quick Install (Latest Release)
 
 Install with one command:
@@ -71,6 +78,17 @@ curl -fsSL https://raw.githubusercontent.com/L-Jayawardhana/DockLens/main/script
 Verify installed version:
 
 ```bash
+docklens --version
+```
+
+### macOS (Homebrew)
+
+Mac users can install DockLens via Homebrew with the following commands:
+
+```bash
+brew tap L-Jayawardhana/docklens
+brew install docklens
+# verify installation
 docklens --version
 ```
 
@@ -104,3 +122,4 @@ Contributions make the open-source community an amazing place to learn, inspire,
 ## 📄 License
 
 Distributed under the MIT License. See `LICENSE` for more information.
+
